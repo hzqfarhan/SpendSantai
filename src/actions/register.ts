@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function registerUser(formData: FormData) {
     const email = (formData.get("email") as string)?.toLowerCase();
@@ -21,6 +22,7 @@ export async function registerUser(formData: FormData) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const verificationToken = crypto.randomUUID();
 
     try {
         const user = await prisma.user.create({
@@ -28,10 +30,16 @@ export async function registerUser(formData: FormData) {
                 email,
                 password_hash: hashedPassword,
                 name,
+                email_verified: false,
+                verification_token: verificationToken,
             },
         });
 
-        return { success: true, userId: user.id };
+        return {
+            success: true,
+            userId: user.id,
+            verificationToken: verificationToken,
+        };
     } catch (error) {
         console.error("Registration error:", error);
         return { error: "Something went wrong" };

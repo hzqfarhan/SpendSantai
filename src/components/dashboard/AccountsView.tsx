@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getAccounts, addAccount, deleteAccount } from "@/actions/accounts";
 import {
     Wallet,
@@ -11,16 +11,26 @@ import {
     Banknote,
     Smartphone,
     TrendingUp,
-    MoreVertical
+    ArrowLeft,
+    Check,
+    ChevronDown,
+    Search,
 } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { motion, AnimatePresence } from "framer-motion";
+import { MALAYSIAN_BANKS, getBanksByType } from "@/lib/malaysianBanks";
 
 export const AccountsView = () => {
     const [accounts, setAccounts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [selectedType, setSelectedType] = useState("BANK");
+    const [accountName, setAccountName] = useState("");
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [dropdownSearch, setDropdownSearch] = useState("");
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -38,6 +48,17 @@ export const AccountsView = () => {
         fetchData();
     }, []);
 
+    // Close dropdown on outside click
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setSaving(true);
@@ -45,8 +66,8 @@ export const AccountsView = () => {
 
         try {
             const result = await addAccount({
-                name: formData.get("name") as string,
-                type: formData.get("type") as string,
+                name: accountName || (formData.get("name") as string),
+                type: selectedType,
                 balance: parseFloat(formData.get("balance") as string),
             });
 
@@ -54,6 +75,9 @@ export const AccountsView = () => {
                 alert(result.error);
             } else {
                 setIsAdding(false);
+                setShowSuccess(true);
+                setAccountName("");
+                setDropdownSearch("");
                 fetchData();
             }
         } catch (error) {
@@ -93,6 +117,12 @@ export const AccountsView = () => {
         }
     };
 
+    const filteredBanks = (selectedType === "BANK" || selectedType === "E-WALLET")
+        ? getBanksByType(selectedType as "BANK" | "E-WALLET").filter(b =>
+            b.name.toLowerCase().includes(dropdownSearch.toLowerCase())
+        )
+        : [];
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-[var(--color-text-secondary)]">
@@ -103,14 +133,44 @@ export const AccountsView = () => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 lg:space-y-8">
+            {/* Success state with back button */}
+            <AnimatePresence>
+                {showSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                    >
+                        <GlassCard className="p-6 border-emerald-500/20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                                    <Check className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-emerald-400">Account Added Successfully!</h3>
+                                    <p className="text-sm text-[var(--color-text-secondary)] mt-0.5">Your new account is now being tracked.</p>
+                                </div>
+                                <button
+                                    onClick={() => setShowSuccess(false)}
+                                    className="btn-secondary !py-2.5 !px-4 text-sm font-bold flex items-center gap-2"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Back to Accounts
+                                </button>
+                            </div>
+                        </GlassCard>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold">Accounts</h2>
+                    <h2 className="text-xl lg:text-2xl font-bold">Accounts</h2>
                     <p className="text-[var(--color-text-secondary)] text-sm">Manage all your banks and wallets in one place.</p>
                 </div>
                 <button
-                    onClick={() => setIsAdding(!isAdding)}
+                    onClick={() => { setIsAdding(!isAdding); setShowSuccess(false); }}
                     className="btn-primary !py-2.5 !px-4 text-sm font-semibold flex items-center gap-2"
                 >
                     <Plus className="w-4 h-4" />
@@ -125,25 +185,109 @@ export const AccountsView = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                     >
-                        <GlassCard className="p-6 border-[var(--color-accent)]/20 glow-accent">
-                            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">Account Name</label>
-                                    <input
-                                        name="name"
-                                        required
-                                        placeholder="e.g. Maybank, TNG eWallet"
-                                        className="glass-input"
-                                    />
-                                </div>
+                        <GlassCard className="p-4 lg:p-6 border-[var(--color-accent)]/20 glow-accent">
+                            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                                {/* Account Type */}
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">Type</label>
-                                    <select name="type" required className="glass-input cursor-pointer">
+                                    <select
+                                        value={selectedType}
+                                        onChange={(e) => {
+                                            setSelectedType(e.target.value);
+                                            setAccountName("");
+                                            setDropdownSearch("");
+                                        }}
+                                        className="glass-input cursor-pointer"
+                                    >
                                         <option value="BANK">Bank</option>
                                         <option value="E-WALLET">E-Wallet</option>
                                         <option value="CASH">Cash</option>
                                     </select>
                                 </div>
+
+                                {/* Account Name with Dropdown */}
+                                <div className="space-y-1.5 relative" ref={dropdownRef}>
+                                    <label className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">Account Name</label>
+                                    {(selectedType === "BANK" || selectedType === "E-WALLET") ? (
+                                        <>
+                                            <div
+                                                className="glass-input flex items-center justify-between cursor-pointer"
+                                                onClick={() => setShowDropdown(!showDropdown)}
+                                            >
+                                                <span className={accountName ? "text-[var(--color-text-primary)]" : "text-[var(--color-text-muted)]"}>
+                                                    {accountName || `Select ${selectedType === "BANK" ? "bank" : "e-wallet"}...`}
+                                                </span>
+                                                <ChevronDown className={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+                                            </div>
+                                            <AnimatePresence>
+                                                {showDropdown && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -8 }}
+                                                        className="absolute top-full left-0 right-0 mt-1 z-50 glass-card p-2 max-h-60 overflow-y-auto"
+                                                    >
+                                                        <div className="relative mb-2">
+                                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Search..."
+                                                                value={dropdownSearch}
+                                                                onChange={(e) => setDropdownSearch(e.target.value)}
+                                                                className="glass-input !py-2 !pl-9 !text-sm"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            />
+                                                        </div>
+                                                        {filteredBanks.map((bank) => (
+                                                            <button
+                                                                key={bank.name}
+                                                                type="button"
+                                                                className="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[var(--color-bg-glass-hover)] text-[var(--color-text-primary)] transition-colors min-h-[44px] flex items-center"
+                                                                onClick={() => {
+                                                                    setAccountName(bank.name);
+                                                                    setShowDropdown(false);
+                                                                    setDropdownSearch("");
+                                                                }}
+                                                            >
+                                                                {bank.name}
+                                                            </button>
+                                                        ))}
+                                                        {filteredBanks.length === 0 && (
+                                                            <p className="text-sm text-[var(--color-text-muted)] p-3 text-center">No results found</p>
+                                                        )}
+                                                        <div className="border-t border-[var(--color-border-glass)] mt-1 pt-1">
+                                                            <button
+                                                                type="button"
+                                                                className="w-full text-left px-3 py-2.5 rounded-lg text-sm hover:bg-[var(--color-bg-glass-hover)] text-[var(--color-accent-light)] transition-colors min-h-[44px] flex items-center gap-2"
+                                                                onClick={() => {
+                                                                    const custom = prompt("Enter custom account name:");
+                                                                    if (custom) {
+                                                                        setAccountName(custom);
+                                                                        setShowDropdown(false);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <Plus className="w-3.5 h-3.5" />
+                                                                Enter custom name
+                                                            </button>
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </>
+                                    ) : (
+                                        <input
+                                            name="name"
+                                            required
+                                            placeholder="e.g. Cash in hand"
+                                            value={accountName}
+                                            onChange={(e) => setAccountName(e.target.value)}
+                                            className="glass-input"
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Balance */}
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold text-[var(--color-text-secondary)] uppercase">Starting Balance (RM)</label>
                                     <input
@@ -154,17 +298,19 @@ export const AccountsView = () => {
                                         className="glass-input"
                                     />
                                 </div>
+
+                                {/* Actions */}
                                 <div className="flex gap-2">
                                     <button
                                         type="submit"
-                                        disabled={saving}
+                                        disabled={saving || (!accountName && selectedType !== "CASH")}
                                         className="flex-1 btn-primary !py-2 text-sm font-bold disabled:opacity-50"
                                     >
                                         {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Save"}
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setIsAdding(false)}
+                                        onClick={() => { setIsAdding(false); setAccountName(""); setDropdownSearch(""); }}
                                         className="btn-secondary !py-2 !px-4 text-sm font-bold"
                                     >
                                         Cancel
@@ -176,7 +322,7 @@ export const AccountsView = () => {
                 )}
             </AnimatePresence>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                 {accounts.map((acc) => (
                     <motion.div
                         key={acc.id}
@@ -185,11 +331,11 @@ export const AccountsView = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         className="group"
                     >
-                        <GlassCard className="p-6 hover:glow-accent transition-all cursor-pointer overflow-hidden relative">
+                        <GlassCard className="p-5 lg:p-6 hover:glow-accent transition-all cursor-pointer overflow-hidden relative">
                             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); handleDelete(acc.id); }}
-                                    className="p-2 text-[var(--color-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                                    className="p-2 text-[var(--color-text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
@@ -215,7 +361,7 @@ export const AccountsView = () => {
                                     </p>
                                 </div>
 
-                                <div className="pt-4 border-t border-white/5 flex justify-between items-center text-[10px] text-[var(--color-text-muted)] font-medium">
+                                <div className="pt-4 border-t border-[var(--color-border-glass)] flex justify-between items-center text-[10px] text-[var(--color-text-muted)] font-medium">
                                     <span className="flex items-center gap-1">
                                         <TrendingUp className="w-3 h-3 text-emerald-400" /> +0% this month
                                     </span>
@@ -230,7 +376,7 @@ export const AccountsView = () => {
 
                 {accounts.length === 0 && !isAdding && (
                     <div className="md:col-span-3 py-20 text-center">
-                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="w-20 h-20 bg-[var(--color-bg-glass)] rounded-full flex items-center justify-center mx-auto mb-4">
                             <CreditCard className="w-10 h-10 text-[var(--color-text-muted)] opacity-20" />
                         </div>
                         <h3 className="text-lg font-bold">No accounts yet</h3>

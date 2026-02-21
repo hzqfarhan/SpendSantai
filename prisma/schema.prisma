@@ -8,16 +8,18 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String        @unique
-  password_hash String?       // Optional to support OAuth-only users
-  name          String?
-  image         String?
-  created_at    DateTime      @default(now())
-  accounts      Account[]
-  transactions  Transaction[]
-  budgets       Budget[]
-  goals         Goal[]
+  id                 String        @id @default(cuid())
+  email              String        @unique
+  password_hash      String?       // Optional to support OAuth-only users
+  name               String?
+  image              String?
+  email_verified     Boolean       @default(false)
+  verification_token String?       @unique
+  created_at         DateTime      @default(now())
+  accounts           Account[]
+  transactions       Transaction[]
+  budgets            Budget[]
+  goals              Goal[]
 }
 
 model Account {

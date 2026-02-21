@@ -4,7 +4,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
+import { ArrowRight, Mail, Lock, User as UserIcon, Loader2, CheckCircle, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,8 @@ export const AuthCard = ({ type }: AuthCardProps) => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [verificationInfo, setVerificationInfo] = useState<{ token: string; email: string } | null>(null);
+    const [copied, setCopied] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -37,10 +39,12 @@ export const AuthCard = ({ type }: AuthCardProps) => {
             });
 
             if (result?.error) {
-                setError("Invalid email or password");
+                // Show the actual error message from the authorize callback
+                setError(result.error.includes("verify")
+                    ? "Please verify your email before signing in. Check for the verification link."
+                    : "Invalid email or password");
                 setLoading(false);
             } else {
-                // Force full page refresh to pick up the new session
                 window.location.href = "/dashboard";
             }
         } else {
@@ -48,15 +52,102 @@ export const AuthCard = ({ type }: AuthCardProps) => {
             if (result.error) {
                 setError(result.error === "User already exists" ? "Email is already registered" : "Something went wrong");
                 setLoading(false);
-            } else {
-                await signIn("credentials", {
+            } else if (result.verificationToken) {
+                // Show verification instructions instead of auto-login
+                setVerificationInfo({
+                    token: result.verificationToken,
                     email,
-                    password,
-                    callbackUrl: "/dashboard",
                 });
+                setLoading(false);
             }
         }
     };
+
+    const verificationUrl = verificationInfo
+        ? `${typeof window !== 'undefined' ? window.location.origin : ''}/verify?token=${verificationInfo.token}`
+        : '';
+
+    const handleCopyLink = async () => {
+        await navigator.clipboard.writeText(verificationUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    // Show verification success screen after registration
+    if (verificationInfo) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md z-10"
+            >
+                <div className="text-center mb-10">
+                    <div className="mx-auto mb-6">
+                        <Image src="/logo.svg" alt="SpendSantai" width={48} height={48} className="mx-auto" />
+                    </div>
+                    <h1 className="text-3xl font-bold tracking-tight text-[var(--color-text-primary)]">
+                        Verify Your Email
+                    </h1>
+                    <p className="text-[var(--color-text-secondary)] mt-2">
+                        One more step before you can start tracking.
+                    </p>
+                </div>
+
+                <GlassCard className="p-8 lg:p-10 glow-accent">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="w-16 h-16 rounded-full bg-[var(--color-accent)]/10 flex items-center justify-center">
+                            <Mail className="w-8 h-8 text-[var(--color-accent-light)]" />
+                        </div>
+
+                        <div className="text-center space-y-2">
+                            <h2 className="text-lg font-bold">Account Created Successfully!</h2>
+                            <p className="text-sm text-[var(--color-text-secondary)]">
+                                We sent a verification link to <strong className="text-[var(--color-text-primary)]">{verificationInfo.email}</strong>
+                            </p>
+                        </div>
+
+                        {/* Dev mode: Show verification link directly */}
+                        <div className="w-full space-y-3">
+                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                                <p className="text-xs font-bold text-amber-400 uppercase mb-2">📧 Development Mode — Verification Link</p>
+                                <p className="text-xs text-[var(--color-text-secondary)] break-all font-mono">
+                                    {verificationUrl}
+                                </p>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleCopyLink}
+                                    className="flex-1 btn-secondary !py-3 text-sm font-bold flex items-center justify-center gap-2"
+                                >
+                                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                                    {copied ? "Copied!" : "Copy Link"}
+                                </button>
+                                <Link
+                                    href={`/verify?token=${verificationInfo.token}`}
+                                    className="flex-1 btn-primary !py-3 text-sm font-bold flex items-center justify-center gap-2"
+                                >
+                                    Verify Now <ArrowRight className="w-4 h-4" />
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 text-center pt-6 border-t border-[var(--color-border-glass)]">
+                        <p className="text-sm text-[var(--color-text-secondary)]">
+                            Already verified?{" "}
+                            <Link
+                                href="/login"
+                                className="text-[var(--color-accent-light)] font-semibold hover:underline transition-all ml-1"
+                            >
+                                Sign in here
+                            </Link>
+                        </p>
+                    </div>
+                </GlassCard>
+            </motion.div>
+        );
+    }
 
     return (
         <motion.div
@@ -78,7 +169,7 @@ export const AuthCard = ({ type }: AuthCardProps) => {
                 </p>
             </div>
 
-            <GlassCard className="p-10 glow-accent">
+            <GlassCard className="p-8 lg:p-10 glow-accent">
                 {/* Social Login Buttons */}
                 <div className="space-y-3 mb-6">
                     <button
@@ -109,9 +200,9 @@ export const AuthCard = ({ type }: AuthCardProps) => {
 
                 {/* Divider */}
                 <div className="flex items-center gap-4 mb-6">
-                    <div className="flex-1 h-px bg-white/10" />
+                    <div className="flex-1 h-px bg-[var(--color-border-glass)]" />
                     <span className="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wider">or continue with email</span>
-                    <div className="flex-1 h-px bg-white/10" />
+                    <div className="flex-1 h-px bg-[var(--color-border-glass)]" />
                 </div>
 
                 <form className="space-y-5" onSubmit={handleSubmit}>
@@ -185,7 +276,7 @@ export const AuthCard = ({ type }: AuthCardProps) => {
                     </button>
                 </form>
 
-                <div className="mt-8 text-center pt-6 border-t border-white/5">
+                <div className="mt-8 text-center pt-6 border-t border-[var(--color-border-glass)]">
                     <p className="text-sm text-[var(--color-text-secondary)]">
                         {isLogin ? "Don't have an account yet?" : "Already have an account?"}{" "}
                         <Link

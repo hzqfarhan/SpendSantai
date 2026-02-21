@@ -4,6 +4,34 @@
   --color-accent: #6366f1;
   --color-accent-light: #818cf8;
   --color-accent-glow: rgba(99, 102, 241, 0.3);
+  --color-success: #34d399;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+}
+
+/* ─── Light Theme (default) ─── */
+:root,
+[data-theme="light"] {
+  --background: #f5f5f9;
+  --foreground: #1a1a2e;
+  --color-bg-primary: #f5f5f9;
+  --color-bg-secondary: #ffffff;
+  --color-bg-glass: rgba(255, 255, 255, 0.7);
+  --color-bg-glass-hover: rgba(255, 255, 255, 0.85);
+  --color-border-glass: rgba(0, 0, 0, 0.08);
+  --color-border-glass-active: rgba(0, 0, 0, 0.15);
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: rgba(26, 26, 46, 0.6);
+  --color-text-muted: rgba(26, 26, 46, 0.35);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
+}
+
+/* ─── Dark Theme ─── */
+[data-theme="dark"] {
+  --background: #0a0a12;
+  --foreground: #f0f0f5;
   --color-bg-primary: #0a0a12;
   --color-bg-secondary: #0f0f1a;
   --color-bg-glass: rgba(255, 255, 255, 0.04);
@@ -13,14 +41,9 @@
   --color-text-primary: #f0f0f5;
   --color-text-secondary: rgba(240, 240, 245, 0.55);
   --color-text-muted: rgba(240, 240, 245, 0.35);
-  --color-success: #34d399;
-  --color-danger: #f87171;
-  --color-warning: #fbbf24;
-}
-
-:root {
-  --background: #0a0a12;
-  --foreground: #f0f0f5;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
 }
 
 @layer base {
@@ -36,30 +59,38 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     color: var(--color-text-primary);
     font-weight: 600;
   }
 
-  /* Custom scrollbar for dark theme */
+  /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
   }
+
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--scrollbar-track);
   }
+
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--scrollbar-thumb);
     border-radius: 3px;
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--scrollbar-thumb-hover);
   }
 }
 
 @layer utilities {
+
   /* Glassmorphism card */
   .glass-card {
     background: var(--color-bg-glass);
@@ -78,7 +109,7 @@
   /* Glass input field */
   .glass-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-bg-glass);
     border: 1px solid var(--color-border-glass);
     border-radius: 0.875rem;
     padding: 0.875rem 1rem;
@@ -86,6 +117,7 @@
     color: var(--color-text-primary);
     font-size: 0.875rem;
     transition: all 0.25s ease;
+    min-height: 48px;
   }
 
   .glass-input::placeholder {
@@ -95,7 +127,7 @@
   .glass-input:focus {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 3px var(--color-accent-glow);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-bg-glass-hover);
   }
 
   /* Primary gradient button */
@@ -107,6 +139,7 @@
     font-weight: 600;
     transition: all 0.25s ease;
     box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+    min-height: 44px;
   }
 
   .btn-primary:hover {
@@ -128,6 +161,7 @@
     font-weight: 500;
     transition: all 0.25s ease;
     backdrop-filter: blur(12px);
+    min-height: 44px;
   }
 
   .btn-secondary:hover {
@@ -143,7 +177,7 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--color-bg-glass);
     border: 1px solid var(--color-border-glass);
     border-radius: 0.875rem;
     color: var(--color-text-primary);
@@ -151,11 +185,12 @@
     font-size: 0.875rem;
     transition: all 0.25s ease;
     cursor: pointer;
+    min-height: 48px;
   }
 
   .btn-social:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--color-bg-glass-hover);
+    border-color: var(--color-border-glass-active);
   }
 
   /* Gradient text */
@@ -169,8 +204,15 @@
   }
 
   @keyframes gradient-shift {
-    0%, 100% { background-position: 0% center; }
-    50% { background-position: 200% center; }
+
+    0%,
+    100% {
+      background-position: 0% center;
+    }
+
+    50% {
+      background-position: 200% center;
+    }
   }
 
   /* Subtle glow effect */
@@ -180,9 +222,19 @@
 
   /* Background orb animation */
   @keyframes float-orb {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -50px) scale(1.05); }
-    66% { transform: translate(-20px, 20px) scale(0.95); }
+
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+      transform: translate(30px, -50px) scale(1.05);
+    }
+
+    66% {
+      transform: translate(-20px, 20px) scale(0.95);
+    }
   }
 
   .orb {
@@ -192,5 +244,16 @@
     opacity: 0.5;
     pointer-events: none;
     z-index: 0;
+  }
+
+  /* ─── Mobile Responsive ─── */
+  @media (max-width: 1023px) {
+    .glass-card {
+      border-radius: 1rem;
+    }
+
+    .glass-input {
+      font-size: 1rem;
+    }
   }
 }

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { BackgroundOrbs } from "@/components/ui/BackgroundOrbs";
 import { Providers } from "@/components/Providers";
+import { ThemeInitializer } from "@/components/ThemeInitializer";
 import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -35,9 +36,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Providers>
+          <ThemeInitializer />
           <BackgroundOrbs />
           <div className="relative z-10">
             {children}
