@@ -10,7 +10,7 @@ datasource db {
 model User {
   id            String        @id @default(cuid())
   email         String        @unique
-  password_hash String
+  password_hash String?       // Optional to support OAuth-only users
   name          String?
   image         String?
   created_at    DateTime      @default(now())
@@ -22,7 +22,7 @@ model User {
 
 model Account {
   id            String        @id @default(cuid())
-  name          String        // e.g., "Cash", "BCA", "GoPay"
+  name          String        // e.g., "Cash", "Maybank", "TNG eWallet"
   type          String        // "BANK", "CASH", "E-WALLET"
   balance       Float         @default(0)
   user_id       String
@@ -41,7 +41,7 @@ model Transaction {
   account     Account?        @relation(fields: [account_id], references: [id])
   amount      Float
   type        TransactionType
-  category    String          // Simplified for now, or link to a Category model
+  category    String
   date        DateTime
   description String?
   created_at  DateTime        @default(now())
