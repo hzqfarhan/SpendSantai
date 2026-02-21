@@ -19,7 +19,7 @@ export const AuthCard = ({ type }: AuthCardProps) => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [verificationInfo, setVerificationInfo] = useState<{ token: string; email: string } | null>(null);
+    const [verificationInfo, setVerificationInfo] = useState<{ token: string; email: string; emailSent: boolean } | null>(null);
     const [copied, setCopied] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -57,6 +57,7 @@ export const AuthCard = ({ type }: AuthCardProps) => {
                 setVerificationInfo({
                     token: result.verificationToken,
                     email,
+                    emailSent: !!(result as any).emailSent,
                 });
                 setLoading(false);
             }
@@ -102,18 +103,21 @@ export const AuthCard = ({ type }: AuthCardProps) => {
                         <div className="text-center space-y-2">
                             <h2 className="text-lg font-bold">Account Created Successfully!</h2>
                             <p className="text-sm text-[var(--color-text-secondary)]">
-                                We sent a verification link to <strong className="text-[var(--color-text-primary)]">{verificationInfo.email}</strong>
+                                {verificationInfo.emailSent
+                                    ? (<>We sent a verification link to <strong className="text-[var(--color-text-primary)]">{verificationInfo.email}</strong>. Check your inbox (and spam folder).</>)
+                                    : (<>Verify your account to get started.</>)}
                             </p>
                         </div>
 
-                        {/* Dev mode: Show verification link directly */}
                         <div className="w-full space-y-3">
-                            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                                <p className="text-xs font-bold text-amber-400 uppercase mb-2">📧 Development Mode — Verification Link</p>
-                                <p className="text-xs text-[var(--color-text-secondary)] break-all font-mono">
-                                    {verificationUrl}
-                                </p>
-                            </div>
+                            {!verificationInfo.emailSent && (
+                                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                                    <p className="text-xs font-bold text-amber-400 uppercase mb-2">📧 Verification Link (no email service configured)</p>
+                                    <p className="text-xs text-[var(--color-text-secondary)] break-all font-mono">
+                                        {verificationUrl}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="flex gap-2">
                                 <button

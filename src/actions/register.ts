@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function registerUser(formData: FormData) {
     const email = (formData.get("email") as string)?.toLowerCase();
@@ -35,10 +36,19 @@ export async function registerUser(formData: FormData) {
             },
         });
 
+        // Send verification email
+        const emailResult = await sendVerificationEmail(email, verificationToken, name);
+
+        if (!emailResult.success) {
+            console.warn("Failed to send verification email:", emailResult.error);
+            // Don't fail registration — user can still verify via the on-screen link
+        }
+
         return {
             success: true,
             userId: user.id,
             verificationToken: verificationToken,
+            emailSent: emailResult.success,
         };
     } catch (error) {
         console.error("Registration error:", error);
