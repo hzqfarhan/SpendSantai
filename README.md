@@ -26,9 +26,9 @@
 
 ## 📸 Screenshots
 
-| Dashboard | Add Transaction | Spending Analytics |
+| Dashboard | Add Transaction | Accounts Overview |
 | :---: | :---: | :---: |
-| ![Dashboard Placeholder](https://via.placeholder.com/200x400?text=Dashboard) | ![Add Entry Placeholder](https://via.placeholder.com/200x400?text=Add+Entry) | ![Reports Placeholder](https://via.placeholder.com/200x400?text=Analytics) |
+|![SpendSantai Dashboard](https://drive.google.com/thumbnail?id=1eZi7_x9zQjfrUwqXluCmdk_A-lSUvEmp&sz=w1000) | ![Add Transaction Screenshot](https://drive.google.com/thumbnail?id=1dw9MQRtHGmZZJN2fhzhDX5lViqeIdh0-&sz=w1000)| ![SpendSantai Accounts Overview](https://drive.google.com/thumbnail?id=1-8RxKeiAaI8WUDn-eGC4_FNvqyo_rmFY&sz=w1000) |
 
 ## 🛠️ Getting Started
 
